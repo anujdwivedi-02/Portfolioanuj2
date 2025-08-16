@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Offer Letter — PDF Template Filler (pixel-perfect)</title>
+
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+  <style>
+    body{font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:16px; background:#f6f7fb; color:#0b1720}
+    .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:360px 1fr; gap:18px}
+    @media (max-width:980px){ .wrap{grid-template-columns:1fr} }
+
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    h2{margin:0 0 8px;font-size:18px;color:#0b2a3a}
+    label{display:block;margin-top:10px;font-size:13px;color:#556170}
+    input[type="text"]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;margin-top:6px;font-size:14px}
+    .btn{padding:10px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:#0f62fe;color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #d1d5db;color:#0b2a3a}
+    .tiny{font-size:13px;color:#556170;margin-top:8px}
+
+    /* Template viewer area */
+    .viewer-wrap{position:relative;background:#e9eef6;border-radius:8px;padding:12px;min-height:640px;display:flex;flex-direction:column}
+    .viewer{flex:1;position:relative;border:1px solid #dfe6ef;border-radius:6px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center}
+    embed{width:100%;height:100%;display:block;border:0}
+
+    /* overlay markers */
+    .marker{
+      position:absolute;
+      min-width:34px;
+      min-height:20px;
+      padding:4px 6px;
+      border-radius:6px;
+      color:#fff;
+      font-weight:700;
+      font-size:12px;
+      cursor:move;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      box-shadow:0 6px 14px rgba(2,6,23,0.12);
+    }
+    .m-date{background:#0f62fe}
+    .m-name{background:#0ba37f}
+    .m-start{background:#ff7a59}
+
+    .controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .nudge-box{display:flex;gap:6px;align-items:center}
+    .nudge-box input{width:64px;padding:6px;border-radius:6px;border:1px solid #e6e9ee}
+
+    .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .note{font-size:13px;color:#556170;margin-top:8px}
+
+    footer{margin-top:14px;font-size:13px;color:#6b7280}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Left column: form & controls -->
+    <div class="card">
+      <h2>Fill placeholders</h2>
+
+      <label>Date (replaces {{Date}})</label>
+      <input id="inputDate" type="text" placeholder="e.g. 12 August 2025" value="">
+
+      <label>Student name (replaces {{Muneeb umer}})</label>
+      <input id="inputName" type="text" placeholder="e.g. Muneeb Umer">
+
+      <label>Start Date (replaces {{Start Date}})</label>
+      <input id="inputStart" type="text" placeholder="e.g. 15 August 2025">
+
+      <div class="actions">
+        <button id="btnPreview" class="btn primary">Preview on Template</button>
+        <button id="btnReset" class="btn ghost">Reset Markers</button>
+      </div>
+
+      <div class="tiny">After clicking <strong>Preview on Template</strong>, adjust marker positions by dragging them to the exact placeholder locations. Use the nudge inputs for precise placement (pixels).</div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #eef2f6">
+
+      <h3 style="margin-top:6px">Selected marker controls</h3>
+      <div class="tiny">Click a marker to select it, then nudge or set exact coordinates below (PDF coordinate units)</div>
+
+      <div style="margin-top:8px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="width:8px;height:8px;background:#0f62fe;border-radius:2px"></div><div style="font-weight:700">Date marker</div>
+        </div>
+        <div class="nudge-box" style="margin-top:8px">
+          X: <input id="xDate" type="number" step="1">
+          Y: <input id="yDate" type="number" step="1">
+          Size: <input id="sizeDate" type="number" value="12" step="1" style="width:72px">
+          <button id="setDate" class="btn ghost">Set</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="width:8px;height:8px;background:#0ba37f;border-radius:2px"></div><div style="font-weight:700">Name marker</div>
+        </div>
+        <div class="nudge-box" style="margin-top:8px">
+          X: <input id="xName" type="number" step="1">
+          Y: <input id="yName" type="number" step="1">
+          Size: <input id="sizeName" type="number" value="14" step="1" style="width:72px">
+          <button id="setName" class="btn ghost">Set</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="width:8px;height:8px;background:#ff7a59;border-radius:2px"></div><div style="font-weight:700">Start marker</div>
+        </div>
+        <div class="nudge-box" style="margin-top:8px">
+          X: <input id="xStart" type="number" step="1">
+          Y: <input id="yStart" type="number" step="1">
+          Size: <input id="sizeStart" type="number" value="12" step="1" style="width:72px">
+          <button id="setStart" class="btn ghost">Set</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="actions">
+        <button id="btnDownload" class="btn primary">Finalize & Download PDF</button>
+        <button id="btnDownloadPreview" class="btn ghost">Download Quick Preview PDF</button>
+      </div>
+
+      <div class="note">Quick Preview produces the filled PDF using current marker positions. Finalize & Download will also embed and flatten the text (non-editable).</div>
+    </div>
+
+    <!-- Right column: viewer -->
+    <div class="card viewer-wrap">
+      <h2 style="margin:0 0 8px">Template Viewer (drag markers)</h2>
+      <div class="viewer" id="viewer">
+        <!-- We embed the PDF in an iframe so users see template exactly -->
+        <embed id="pdfEmbed" type="application/pdf" src="" />
+        <!-- Markers layered on top -->
+        <div id="markerDate" class="marker m-date" title="Date marker">Date</div>
+        <div id="markerName" class="marker m-name" title="Name marker">Name</div>
+        <div id="markerStart" class="marker m-start" title="Start">Start</div>
+      </div>
+
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <div class="tiny">PDF size (points): <span id="pdfSize">—</span></div>
+        <div style="flex:1"></div>
+        <div class="tiny">Viewer width: <span id="viewW">—</span> px</div>
+      </div>
+
+      <footer>Tip: after preview, drag each marker precisely over the corresponding <code>{{...}}</code> placeholder in the template. The tool will compute correct PDF coordinates for the final file.</footer>
+    </div>
+  </div>
+
+  <script>
+  // ==== Embedded base64 PDF (your uploaded template) ====
+  // This is the PDF you uploaded; it is base64-encoded here for a single-file solution.
+  // (Truncated comment) The actual base64 string is included below.
+  const pdfBase64 = "REPLACE_BASE64_HERE";
+  // ----------------------------------------------------
+
+  // For convenience: we will replace the placeholder above programmatically below
+  // But we must actually embed the real base64 string into pdfBase64.
+  </script>
+
+  <script>
+  // --- Inserted base64 from server-side (assistant) ---
+  // The assistant will replace the "REPLACE_BASE64_HERE" with the full base64.
+  // Below code will be replaced programmatically in the delivered single file.
+  </script>
+
+  <script>
+  // ---- Implementation (uses pdf-lib) ----
+
+  // Utility: convert base64 to Uint8Array
+  function base64ToUint8Array(base64) {
+    const binary_string = atob(base64);
+    const len = binary_string.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  // UI elements
+  const inputDate = document.getElementById('inputDate');
+  const inputName = document.getElementById('inputName');
+  const inputStart = document.getElementById('inputStart');
+
+  const btnPreview = document.getElementById('btnPreview');
+  const btnReset = document.getElementById('btnReset');
+  const btnDownload = document.getElementById('btnDownload');
+  const btnDownloadPreview = document.getElementById('btnDownloadPreview');
+
+  const pdfEmbed = document.getElementById('pdfEmbed');
+  const viewer = document.getElementById('viewer');
+  const markerDate = document.getElementById('markerDate');
+  const markerName = document.getElementById('markerName');
+  const markerStart = document.getElementById('markerStart');
+  const pdfSizeSpan = document.getElementById('pdfSize');
+  const viewWspan = document.getElementById('viewW');
+
+  // coordinate inputs
+  const xDateIn = document.getElementById('xDate');
+  const yDateIn = document.getElementById('yDate');
+  const sizeDateIn = document.getElementById('sizeDate');
+  const setDateBtn = document.getElementById('setDate');
+
+  const xNameIn = document.getElementById('xName');
+  const yNameIn = document.getElementById('yName');
+  const sizeNameIn = document.getElementById('sizeName');
+  const setNameBtn = document.getElementById('setName');
+
+  const xStartIn = document.getElementById('xStart');
+  const yStartIn = document.getElementById('yStart');
+  const sizeStartIn = document.getElementById('sizeStart');
+  const setStartBtn = document.getElementById('setStart');
+
+  // default marker positions (in PDF points) - will be overridden after loading PDF
+  let pdfWidth = 595, pdfHeight = 842; // default A4 pts
+  let marker = {
+    date: { x: 60, y: 760, size: 12 },
+    name: { x: 85, y: 660, size: 14 },
+    start: { x: 80, y: 560, size: 12 },
+  };
+
+  // displayed size (px) of the embed area
+  function updateViewerSizes(){
+    const rect = viewer.getBoundingClientRect();
+    viewWspan.textContent = Math.round(rect.width) + ' px';
+    // position markers when viewer size changes
+    updateMarkersFromPdfCoords();
+  }
+
+  window.addEventListener('resize', updateViewerSizes);
+
+  // Load PDF embed
+  function setEmbedFromBase64(b64){
+    const dataUri = "data:application/pdf;base64," + b64;
+    pdfEmbed.src = dataUri;
+    // small delay to ensure embed is shown
+    setTimeout(updateViewerSizes, 300);
+  }
+
+  // Convert PDF points to display pixels and vice versa
+  function getScale(){
+    // pdf page width in points -> pdfWidth
+    const rect = viewer.getBoundingClientRect();
+    // embed occupies full viewer; compute displayed width
+    const displayedWidth = rect.width;
+    const scale = displayedWidth / pdfWidth;
+    return scale;
+  }
+
+  function pdfToDisplay(ptX, ptY){
+    // PDF origin is bottom-left. Our display origin (top-left).
+    const s = getScale();
+    const rect = viewer.getBoundingClientRect();
+    const dispX = ptX * s;
+    // display y: top = 0 ; so convert
+    const dispY = rect.height - (ptY * s);
+    return { x: dispX + rect.left, y: dispY + rect.top };
+  }
+
+  function displayToPdf(dispX, dispY){
+    const rect = viewer.getBoundingClientRect();
+    const s = getScale();
+    const localX = dispX - rect.left;
+    const localY = dispY - rect.top;
+    const ptX = localX / s;
+    const ptY = (rect.height - localY) / s;
+    return { x: ptX, y: ptY };
+  }
+
+  // Set marker element position based on PDF coords
+  function setMarkerElementPos(elem, ptX, ptY){
+    const rect = viewer.getBoundingClientRect();
+    const s = getScale();
+    const localX = ptX * s;
+    const localY = rect.height - (ptY * s);
+    // place marker with transform so it's inside viewer
+    elem.style.left = (localX - elem.offsetWidth/2) + 'px';
+    elem.style.top = (localY - elem.offsetHeight/2) + 'px';
+  }
+
+  function updateMarkersFromPdfCoords(){
+    setMarkerElementPos(markerDate, marker.date.x, marker.date.y);
+    setMarkerElementPos(markerName, marker.name.x, marker.name.y);
+    setMarkerElementPos(markerStart, marker.start.x, marker.start.y);
+
+    // update coordinate inputs to reflect PDF coords
+    xDateIn.value = Math.round(marker.date.x);
+    yDateIn.value = Math.round(marker.date.y);
+    sizeDateIn.value = marker.date.size;
+
+    xNameIn.value = Math.round(marker.name.x);
+    yNameIn.value = Math.round(marker.name.y);
+    sizeNameIn.value = marker.name.size;
+
+    xStartIn.value = Math.round(marker.start.x);
+    yStartIn.value = Math.round(marker.start.y);
+    sizeStartIn.value = marker.start.size;
+  }
+
+  // Dragging support for markers
+  function makeDraggable(elem, key){
+    let isDown = false;
+    let startX, startY;
+
+    elem.addEventListener('mousedown', (ev)=>{
+      ev.preventDefault();
+      isDown = true;
+      startX = ev.clientX;
+      startY = ev.clientY;
+      selectMarker(elem);
+    });
+    window.addEventListener('mousemove', (ev)=>{
+      if(!isDown) return;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      startX = ev.clientX;
+      startY = ev.clientY;
+      // move element visually
+      const curLeft = parseFloat(elem.style.left || 0) || 0;
+      const curTop = parseFloat(elem.style.top || 0) || 0;
+      elem.style.left = (curLeft + dx) + 'px';
+      elem.style.top = (curTop + dy) + 'px';
+
+      // update PDF coords
+      const rect = viewer.getBoundingClientRect();
+      // compute center of element in viewport coords
+      const cx = rect.left + (parseFloat(elem.style.left || 0) + elem.offsetWidth/2);
+      const cy = rect.top + (parseFloat(elem.style.top || 0) + elem.offsetHeight/2);
+      const pdfCoord = displayToPdf(cx, cy);
+
+      marker[key].x = pdfCoord.x;
+      marker[key].y = pdfCoord.y;
+
+      // refresh input fields
+      updateMarkersFromPdfCoords();
+    });
+    window.addEventListener('mouseup', ()=>{ isDown = false; });
+  }
+
+  // Marker selection visuals
+  let selectedMarkerEl = null;
+  function selectMarker(el){
+    if(selectedMarkerEl) selectedMarkerEl.style.outline = '';
+    selectedMarkerEl = el;
+    el.style.outline = '3px solid rgba(0,0,0,0.06)';
+  }
+
+  markerDate.addEventListener('click', ()=> selectMarker(markerDate));
+  markerName.addEventListener('click', ()=> selectMarker(markerName));
+  markerStart.addEventListener('click', ()=> selectMarker(markerStart));
+  makeDraggable(markerDate, 'date');
+  makeDraggable(markerName, 'name');
+  makeDraggable(markerStart, 'start');
+
+  // Set via inputs
+  setDateBtn.addEventListener('click', ()=>{
+    const x = parseFloat(xDateIn.value||0);
+    const y = parseFloat(yDateIn.value||0);
+    const s = parseFloat(sizeDateIn.value||12);
+    marker.date.x = x;
+    marker.date.y = y;
+    marker.date.size = s;
+    updateMarkersFromPdfCoords();
+  });
+  setNameBtn.addEventListener('click', ()=>{
+    const x = parseFloat(xNameIn.value||0);
+    const y = parseFloat(yNameIn.value||0);
+    const s = parseFloat(sizeNameIn.value||14);
+    marker.name.x = x;
+    marker.name.y = y;
+    marker.name.size = s;
+    updateMarkersFromPdfCoords();
+  });
+  setStartBtn.addEventListener('click', ()=>{
+    const x = parseFloat(xStartIn.value||0);
+    const y = parseFloat(yStartIn.value||0);
+    const s = parseFloat(sizeStartIn.value||12);
+    marker.start.x = x;
+    marker.start.y = y;
+    marker.start.size = s;
+    updateMarkersFromPdfCoords();
+  });
+
+  // Reset markers to initial defaults
+  btnReset.addEventListener('click', ()=>{
+    // Restore some sane defaults relative to PDF size
+    marker = {
+      date: { x: pdfWidth * 0.08, y: pdfHeight * 0.925, size: 12 },
+      name: { x: pdfWidth * 0.15, y: pdfHeight * 0.74, size: 14 },
+      start: { x: pdfWidth * 0.14, y: pdfHeight * 0.54, size: 12 },
+    };
+    updateMarkersFromPdfCoords();
+  });
+
+  // Preview on template: embed the pdf and show markers
+  btnPreview.addEventListener('click', async ()=>{
+    if(!pdfBase64 || pdfBase64.includes("REPLACE_BASE64_HERE")){
+      alert("PDF template not found in the file. Please ensure the base64 PDF is embedded in the HTML.");
+      return;
+    }
+    setEmbedFromBase64(pdfBase64);
+
+    // Load PDF with pdf-lib to get page size
+    const uint8 = base64ToUint8Array(pdfBase64);
+    const pdfDoc = await PDFLib.PDFDocument.load(uint8);
+    const pages = pdfDoc.getPages();
+    const p0 = pages[0];
+    const { width, height } = p0.getSize();
+    pdfWidth = width;
+    pdfHeight = height;
+    pdfSizeSpan.textContent = Math.round(pdfWidth) + " x " + Math.round(pdfHeight);
+
+    // initialize markers at a reasonable place relative to pdf size if currently placeholders default
+    if(!marker || !marker.date) {
+      marker = {};
+    }
+    // if marker values are default-ish, set proportional defaults
+    marker.date = marker.date || { x: pdfWidth*0.08, y: pdfHeight*0.925, size: 12 };
+    marker.name = marker.name || { x: pdfWidth*0.15, y: pdfHeight*0.74, size: 14 };
+    marker.start = marker.start || { x: pdfWidth*0.14, y: pdfHeight*0.54, size: 12 };
+
+    // small delay to let embed render
+    setTimeout(()=>{ updateViewerSizes(); updateMarkersFromPdfCoords(); }, 300);
+  });
+
+  // Core: fill PDF and download
+  async function fillPdfAndDownload(flatten=true){
+    if(!pdfBase64 || pdfBase64.includes("REPLACE_BASE64_HERE")){
+      alert("PDF template missing inside the HTML. Can't continue.");
+      return;
+    }
+    const nameVal = (inputName.value || "").trim();
+    const dateVal = (inputDate.value || "").trim();
+    const startVal = (inputStart.value || "").trim();
+    if(!nameVal || !dateVal || !startVal){
+      if(!confirm("Some fields are empty. Continue anyway?")) return;
+    }
+
+    const uint8 = base64ToUint8Array(pdfBase64);
+    const pdfDoc = await PDFLib.PDFDocument.load(uint8);
+
+    // Use standard Helvetica font (built-in) for safety
+    const helv = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+    const pages = pdfDoc.getPages();
+    const page = pages[0];
+
+    // Draw text at the coordinates stored in marker.* (PDF points)
+    page.drawText(dateVal, {
+      x: marker.date.x,
+      y: marker.date.y,
+      size: marker.date.size,
+      font: helv,
+      color: PDFLib.rgb(0,0,0)
+    });
+
+    page.drawText(nameVal, {
+      x: marker.name.x,
+      y: marker.name.y,
+      size: marker.name.size,
+      font: helv,
+      color: PDFLib.rgb(0,0,0)
+    });
+
+    page.drawText(startVal, {
+      x: marker.start.x,
+      y: marker.start.y,
+      size: marker.start.size,
+      font: helv,
+      color: PDFLib.rgb(0,0,0)
+    });
+
+    // Optionally flatten annotations - pdf-lib doesn't support form flattening since we add text directly (text drawn is flattened)
+    const pdfBytes = await pdfDoc.save();
+
+    // Trigger download
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const filename = (nameVal ? nameVal.replace(/\s+/g,'_') : 'offer_letter') + '_filled.pdf';
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Buttons
+  btnDownload.addEventListener('click', async ()=>{
+    await fillPdfAndDownload(true);
+  });
+  btnDownloadPreview.addEventListener('click', async ()=>{
+    await fillPdfAndDownload(false);
+  });
+
+  // Initialize: embed PDF now (so file is visible even before preview)
+  // Note: the pdfBase64 must be replaced in the delivered file with the actual base64 string (assistant will paste it)
+  if(typeof pdfBase64 !== 'undefined' && pdfBase64 && !pdfBase64.includes("REPLACE_BASE64_HERE")){
+    setEmbedFromBase64(pdfBase64);
+  }
+
+  // Initial viewer sizes update
+  setTimeout(updateViewerSizes, 400);
+  </script>
+</body>
+</html>
